@@ -22,8 +22,8 @@ export const Navigation = () => {
     { name: "Food Detection", icon: Camera, path: "/food-detection" },
     { name: "Calorie Burn", icon: Activity, path: "/calorie-burn" },
     { name: "Journal", icon: BookOpen, path: "/journal" },
+    { name: "Ask Agent", icon: HelpCircle, path: "/ask-agent" },
     { name: "Profile", icon: User, path: "/profile" },
-    { name: "Help", icon: HelpCircle, path: "/help" },
   ];
 
   const isActive = (path: string) => location.pathname === path;

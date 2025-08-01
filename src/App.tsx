@@ -10,6 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import FoodDetection from "./pages/FoodDetection";
 import CalorieBurn from "./pages/CalorieBurn";
 import Journal from "./pages/Journal";
+import Profile from "./pages/Profile";
+import AskAgent from "./pages/AskAgent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
           <Route path="/food-detection" element={<FoodDetection />} />
           <Route path="/calorie-burn" element={<CalorieBurn />} />
           <Route path="/journal" element={<Journal />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/ask-agent" element={<AskAgent />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

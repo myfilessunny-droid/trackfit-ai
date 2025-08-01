@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
+import { ProfileHeader } from "@/components/ProfileHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,12 @@ import {
   Bike,
   Waves,
   Dumbbell,
-  Music
+  Music,
+  Target,
+  Zap,
+  Trophy,
+  Timer,
+  TrendingUp
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,6 +38,8 @@ const activities: Activity[] = [
   { name: "Cycling", icon: <Bike className="w-5 h-5" />, met: 6.0 },
   { name: "Swimming", icon: <Waves className="w-5 h-5" />, met: 7.0 },
   { name: "Weight Training", icon: <Dumbbell className="w-5 h-5" />, met: 6.0 },
+  { name: "CrossFit", icon: <Target className="w-5 h-5" />, met: 8.5 },
+  { name: "HIIT", icon: <Zap className="w-5 h-5" />, met: 9.0 },
   { name: "Dancing", icon: <Music className="w-5 h-5" />, met: 5.0 },
 ];
 
@@ -77,6 +85,7 @@ const CalorieBurn = () => {
   return (
     <div className="min-h-screen bg-gradient-background">
       <Navigation />
+      <ProfileHeader />
       <div className="lg:ml-64 p-8">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Header */}
@@ -229,14 +238,42 @@ const CalorieBurn = () => {
             </Card>
           </div>
 
+          {/* Gym Stats & Motivation */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+            <Card className="fitness-card p-6 text-center">
+              <Trophy className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
+              <h4 className="font-bold text-lg mb-2">Today's Goal</h4>
+              <p className="text-2xl font-bold text-primary">500 kcal</p>
+              <p className="text-sm text-muted-foreground">Burn target</p>
+            </Card>
+            
+            <Card className="fitness-card p-6 text-center">
+              <Timer className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+              <h4 className="font-bold text-lg mb-2">Active Time</h4>
+              <p className="text-2xl font-bold text-primary">45 min</p>
+              <p className="text-sm text-muted-foreground">Workout duration</p>
+            </Card>
+            
+            <Card className="fitness-card p-6 text-center">
+              <TrendingUp className="w-12 h-12 mx-auto mb-4 text-green-500" />
+              <h4 className="font-bold text-lg mb-2">Weekly Progress</h4>
+              <p className="text-2xl font-bold text-primary">85%</p>
+              <p className="text-sm text-muted-foreground">Goal completion</p>
+            </Card>
+          </div>
+
           {/* MET Information */}
           <Card className="fitness-card p-6 animate-fade-in">
-            <h3 className="text-lg font-semibold mb-4">📚 How it works</h3>
-            <p className="text-muted-foreground">
+            <h3 className="text-lg font-semibold mb-4">💪 Gym Science</h3>
+            <p className="text-muted-foreground mb-4">
               Our calculator uses MET (Metabolic Equivalent) values to estimate calories burned. 
-              MET represents the energy cost of physical activities as a multiple of resting metabolic rate. 
-              The formula is: <strong>Calories = MET × Weight (kg) × Time (hours)</strong>
+              MET represents the energy cost of physical activities as a multiple of resting metabolic rate.
             </p>
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <p className="font-semibold text-center">
+                🔥 Formula: <span className="text-primary">Calories = MET × Weight (kg) × Time (hours)</span>
+              </p>
+            </div>
           </Card>
         </div>
       </div>

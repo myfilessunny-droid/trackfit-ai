@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
+import { ProfileHeader } from "@/components/ProfileHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,6 +87,7 @@ const FoodDetection = () => {
   return (
     <div className="min-h-screen bg-gradient-background">
       <Navigation />
+      <ProfileHeader />
       <div className="lg:ml-64 p-8">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Header */}
