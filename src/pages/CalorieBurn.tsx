@@ -30,17 +30,36 @@ interface Activity {
   name: string;
   icon: React.ReactNode;
   met: number;
+  intensity: 'Low' | 'Moderate' | 'High' | 'Extreme';
+  description: string;
 }
 
-const activities: Activity[] = [
-  { name: "Walking", icon: <Footprints className="w-5 h-5" />, met: 3.5 },
-  { name: "Running", icon: <Activity className="w-5 h-5" />, met: 8.0 },
-  { name: "Cycling", icon: <Bike className="w-5 h-5" />, met: 6.0 },
-  { name: "Swimming", icon: <Waves className="w-5 h-5" />, met: 7.0 },
-  { name: "Weight Training", icon: <Dumbbell className="w-5 h-5" />, met: 6.0 },
-  { name: "CrossFit", icon: <Target className="w-5 h-5" />, met: 8.5 },
-  { name: "HIIT", icon: <Zap className="w-5 h-5" />, met: 9.0 },
-  { name: "Dancing", icon: <Music className="w-5 h-5" />, met: 5.0 },
+const gymActivities: Activity[] = [
+  { name: "Bench Press", icon: <Dumbbell className="w-5 h-5" />, met: 6.0, intensity: 'Moderate', description: 'Chest, shoulders, triceps compound exercise' },
+  { name: "Deadlifts", icon: <Dumbbell className="w-5 h-5" />, met: 6.5, intensity: 'High', description: 'Full-body compound movement, posterior chain focus' },
+  { name: "Squats", icon: <Dumbbell className="w-5 h-5" />, met: 6.0, intensity: 'Moderate', description: 'Lower body compound exercise, quadriceps focus' },
+  { name: "Pull-ups", icon: <Dumbbell className="w-5 h-5" />, met: 7.0, intensity: 'High', description: 'Upper body bodyweight exercise, back and biceps' },
+  { name: "Dumbbell Training", icon: <Dumbbell className="w-5 h-5" />, met: 5.5, intensity: 'Moderate', description: 'Isolated muscle training with dumbbells' },
+  { name: "Barbell Rows", icon: <Dumbbell className="w-5 h-5" />, met: 6.0, intensity: 'Moderate', description: 'Back compound exercise, rhomboids and lats' },
+  { name: "Overhead Press", icon: <Dumbbell className="w-5 h-5" />, met: 5.8, intensity: 'Moderate', description: 'Shoulder compound exercise, core stability' },
+  { name: "Lat Pulldowns", icon: <Dumbbell className="w-5 h-5" />, met: 5.5, intensity: 'Moderate', description: 'Vertical pulling movement, latissimus dorsi' },
+  { name: "CrossFit WOD", icon: <Target className="w-5 h-5" />, met: 8.5, intensity: 'Extreme', description: 'High-intensity varied functional movements' },
+  { name: "HIIT Training", icon: <Zap className="w-5 h-5" />, met: 9.0, intensity: 'Extreme', description: 'High-intensity interval training protocol' },
+  { name: "Circuit Training", icon: <Activity className="w-5 h-5" />, met: 7.5, intensity: 'High', description: 'Multiple exercises with minimal rest periods' },
+  { name: "Functional Training", icon: <Activity className="w-5 h-5" />, met: 7.0, intensity: 'High', description: 'Real-world movement patterns and stability' },
+  { name: "Cable Exercises", icon: <Dumbbell className="w-5 h-5" />, met: 5.5, intensity: 'Moderate', description: 'Constant tension resistance training' },
+  { name: "Machine Weights", icon: <Dumbbell className="w-5 h-5" />, met: 5.0, intensity: 'Low', description: 'Guided resistance training with machines' },
+  { name: "Kettlebell Training", icon: <Dumbbell className="w-5 h-5" />, met: 8.0, intensity: 'High', description: 'Dynamic ballistic and grinding movements' },
+  { name: "Battle Ropes", icon: <Waves className="w-5 h-5" />, met: 8.5, intensity: 'High', description: 'High-intensity rope training, core and cardio' },
+];
+
+const cardioActivities: Activity[] = [
+  { name: "Treadmill Running", icon: <Activity className="w-5 h-5" />, met: 8.0, intensity: 'High', description: 'Steady-state or interval running cardio' },
+  { name: "Elliptical", icon: <Activity className="w-5 h-5" />, met: 7.0, intensity: 'Moderate', description: 'Low-impact full-body cardio machine' },
+  { name: "Stationary Bike", icon: <Bike className="w-5 h-5" />, met: 6.5, intensity: 'Moderate', description: 'Cycling cardio with adjustable resistance' },
+  { name: "Rowing Machine", icon: <Waves className="w-5 h-5" />, met: 8.5, intensity: 'High', description: 'Full-body cardio with pulling motion' },
+  { name: "Stair Climber", icon: <Activity className="w-5 h-5" />, met: 9.0, intensity: 'High', description: 'Vertical climbing cardio machine' },
+  { name: "Swimming", icon: <Waves className="w-5 h-5" />, met: 7.0, intensity: 'Moderate', description: 'Full-body low-impact aquatic exercise' },
 ];
 
 const CalorieBurn = () => {
@@ -48,7 +67,10 @@ const CalorieBurn = () => {
   const [weight, setWeight] = useState<number>(70);
   const [duration, setDuration] = useState<number[]>([30]);
   const [calculatedCalories, setCalculatedCalories] = useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<'gym' | 'cardio'>('gym');
   const { toast } = useToast();
+
+  const currentActivities = activeCategory === 'gym' ? gymActivities : cardioActivities;
 
   const calculateCalories = () => {
     if (!selectedActivity || !weight || duration[0] < 5) {
@@ -91,11 +113,41 @@ const CalorieBurn = () => {
           {/* Header */}
           <div className="text-center animate-fade-in">
             <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Let's see how much you burned 🔥
+              Professional Gym Calorie Calculator 💪
             </h1>
             <p className="text-lg text-muted-foreground">
-              Weight + Time + Movement = Burn!
+              Track your gym performance with scientific precision
             </p>
+          </div>
+
+          {/* Category Tabs */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-muted p-1 rounded-lg">
+              <Button
+                variant={activeCategory === 'gym' ? 'default' : 'ghost'}
+                onClick={() => {
+                  setActiveCategory('gym');
+                  setSelectedActivity(null);
+                  setCalculatedCalories(null);
+                }}
+                className="px-6"
+              >
+                <Dumbbell className="w-4 h-4 mr-2" />
+                Gym Workouts
+              </Button>
+              <Button
+                variant={activeCategory === 'cardio' ? 'default' : 'ghost'}
+                onClick={() => {
+                  setActiveCategory('cardio');
+                  setSelectedActivity(null);
+                  setCalculatedCalories(null);
+                }}
+                className="px-6"
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                Cardio
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -103,15 +155,17 @@ const CalorieBurn = () => {
             <Card className="fitness-card p-6 animate-slide-up">
               <h3 className="text-xl font-semibold mb-6 flex items-center">
                 <Calculator className="w-5 h-5 mr-2 text-primary" />
-                Activity Calculator
+                {activeCategory === 'gym' ? 'Gym Exercise' : 'Cardio Activity'} Calculator
               </h3>
 
               <div className="space-y-6">
                 {/* Activity Selection */}
                 <div className="space-y-3">
-                  <Label className="text-base font-medium">Select Activity</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {activities.map((activity) => (
+                  <Label className="text-base font-medium">
+                    Select {activeCategory === 'gym' ? 'Exercise' : 'Activity'}
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+                    {currentActivities.map((activity) => (
                       <Button
                         key={activity.name}
                         variant={selectedActivity?.name === activity.name ? "default" : "outline"}
@@ -128,9 +182,25 @@ const CalorieBurn = () => {
                     ))}
                   </div>
                   {selectedActivity && (
-                    <Badge variant="secondary" className="mt-2">
-                      MET Value: {selectedActivity.met}
-                    </Badge>
+                    <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary">
+                          MET: {selectedActivity.met}
+                        </Badge>
+                        <Badge 
+                          variant={
+                            selectedActivity.intensity === 'Extreme' ? 'destructive' :
+                            selectedActivity.intensity === 'High' ? 'default' :
+                            selectedActivity.intensity === 'Moderate' ? 'secondary' : 'outline'
+                          }
+                        >
+                          {selectedActivity.intensity} Intensity
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedActivity.description}
+                      </p>
+                    </div>
                   )}
                 </div>
 
