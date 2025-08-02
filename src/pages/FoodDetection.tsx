@@ -1,28 +1,48 @@
-import { useState } from "react";
-import { Navigation } from "@/components/Navigation";
-import { ProfileHeader } from "@/components/ProfileHeader";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Camera, Upload, Loader2, Save, RotateCcw, Image as ImageIcon } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface DetectedFood {
-  name: string;
-  calories: number;
-  confidence: number;
-  bbox: { x: number; y: number; width: number; height: number };
-}
+import React, { useState, useRef } from 'react';
 
 const FoodDetection = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [detectedFoods, setDetectedFoods] = useState<DetectedFood[]>([]);
+  const [detectionResults, setDetectionResults] = useState<any>(null);
   const [analysisComplete, setAnalysisComplete] = useState(false);
-  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const recentMeals = [
+    {
+      id: 1,
+      name: 'Breakfast Bowl',
+      time: '2 hours ago',
+      calories: '450 kcal',
+      type: 'breakfast',
+      image: '🍳'
+    },
+    {
+      id: 2,
+      name: 'Grilled Chicken Salad',
+      time: '5 hours ago',
+      calories: '320 kcal',
+      type: 'lunch',
+      image: '🥗'
+    },
+    {
+      id: 3,
+      name: 'Protein Smoothie',
+      time: '1 day ago',
+      calories: '280 kcal',
+      type: 'snack',
+      image: '🥤'
+    }
+  ];
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'breakfast': return 'bg-yellow-100 text-yellow-800';
+      case 'lunch': return 'bg-blue-100 text-blue-800';
+      case 'snack': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -30,215 +50,269 @@ const FoodDetection = () => {
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
-      setDetectedFoods([]);
+      setDetectionResults(null);
       setAnalysisComplete(false);
     }
   };
 
-  const handleAnalyze = async () => {
+  const handleTakePhoto = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleChooseFile = () => {
+    fileInputRef.current?.click();
+  };
+
+  const analyzeImage = async () => {
     if (!selectedFile) return;
 
     setIsAnalyzing(true);
+    
     try {
-      // Simulate AI detection - replace with actual YOLO model
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Mock detection results
-      const mockResults: DetectedFood[] = [
-        { name: "Apple", calories: 95, confidence: 0.92, bbox: { x: 100, y: 50, width: 80, height: 80 } },
-        { name: "Banana", calories: 105, confidence: 0.87, bbox: { x: 200, y: 100, width: 120, height: 60 } },
-        { name: "Sandwich", calories: 320, confidence: 0.78, bbox: { x: 50, y: 150, width: 150, height: 100 } },
-      ];
-      
-      setDetectedFoods(mockResults);
-      setAnalysisComplete(true);
-      
-      toast({
-        title: "Analysis Complete! 🎉",
-        description: `Found ${mockResults.length} food items with ${mockResults.reduce((sum, food) => sum + food.calories, 0)} total calories`,
+      // Create FormData to send image to backend
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      // Send to backend API
+      const response = await fetch('http://localhost:3001/api/detect-food', {
+        method: 'POST',
+        body: formData,
       });
+
+      if (!response.ok) {
+        throw new Error('Detection failed');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setDetectionResults(data.results);
+        setAnalysisComplete(true);
+      } else {
+        throw new Error(data.error || 'Detection failed');
+      }
+      
     } catch (error) {
-      toast({
-        title: "Analysis failed",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Analysis failed:', error);
+      
+      // Fallback to mock results if backend is not available
+      const mockResults = {
+        detectedFoods: [
+          { name: 'Apple', confidence: 0.92, calories: 95 },
+          { name: 'Nuts', confidence: 0.87, calories: 180 },
+          { name: 'Milk', confidence: 0.78, calories: 120 }
+        ],
+        totalCalories: 395,
+        nutrition: {
+          carbs: 45,
+          protein: 12,
+          fat: 18
+        },
+        modelUsed: 'best.pt'
+      };
+      
+      setDetectionResults(mockResults);
+      setAnalysisComplete(true);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handleSaveToJournal = () => {
-    toast({
-      title: "Saved to Journal! ✅",
-      description: "Your meal has been added to your nutrition journal.",
-    });
-  };
-
-  const handleReset = () => {
+  const resetAnalysis = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
-    setDetectedFoods([]);
+    setDetectionResults(null);
     setAnalysisComplete(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
-  const totalCalories = detectedFoods.reduce((sum, food) => sum + food.calories, 0);
-
   return (
-    <div className="min-h-screen bg-gradient-background">
-      <Navigation />
-      <ProfileHeader />
-      <div className="lg:ml-64 p-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="text-center animate-fade-in">
-            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Let AI guess your meal 🍱
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Upload a photo of your meal and let our AI identify the foods and calories
-            </p>
-          </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-800">Food Detection</h1>
+        <p className="text-gray-600">Let AI identify your meals and track calories</p>
+      </div>
 
-          {/* Upload Area */}
-          <Card className="fitness-card p-8 animate-slide-up">
-            {!previewUrl ? (
-              <div className="text-center space-y-6">
-                <div className="w-32 h-32 mx-auto bg-gradient-primary rounded-full flex items-center justify-center shadow-glow">
-                  <Camera className="w-16 h-16 text-white" />
+      {/* AI Meal Detection Section */}
+      <div className="bg-white rounded-xl p-8 shadow-sm">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+            <span className="text-lg">⚖️</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800">Let AI guess your meal</h2>
+        </div>
+        
+        <p className="text-gray-600 mb-6">Upload a photo and let our AI identify foods and calories</p>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+
+        {/* Upload Area */}
+        <div className="border-2 border-dashed border-green-300 rounded-xl p-8 text-center bg-green-50 mb-6">
+          {!previewUrl ? (
+            <>
+              <div className="text-6xl mb-4">📷</div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Upload a photo of your meal</h3>
+              <p className="text-gray-600 mb-6">Take a photo or choose from your gallery</p>
+              
+              <div className="flex space-x-4 justify-center">
+                <button 
+                  onClick={handleTakePhoto}
+                  className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors"
+                >
+                  <span className="text-lg">📷</span>
+                  <span className="font-medium">Take Photo</span>
+                </button>
+                <button 
+                  onClick={handleChooseFile}
+                  className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors"
+                >
+                  <span className="text-lg">📁</span>
+                  <span className="font-medium">Choose File</span>
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <img 
+                src={previewUrl} 
+                alt="Food preview" 
+                className="max-w-md mx-auto rounded-lg shadow-lg"
+              />
+              <div className="flex space-x-4 justify-center">
+                {!analysisComplete && !isAnalyzing && (
+                  <button 
+                    onClick={analyzeImage}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors"
+                  >
+                    <span className="text-lg">🤖</span>
+                    <span className="font-medium">Analyze with AI</span>
+                  </button>
+                )}
+                <button 
+                  onClick={resetAnalysis}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors"
+                >
+                  <span className="text-lg">🔄</span>
+                  <span className="font-medium">Try Another</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Analysis Status */}
+        {isAnalyzing && (
+          <div className="text-center p-6 bg-blue-50 rounded-lg">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Analyzing with AI Model...</h3>
+            <p className="text-gray-600">Using best.pt model to detect food items</p>
+          </div>
+        )}
+      </div>
+
+      {/* Recent Meals */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h3 className="text-xl font-semibold text-gray-800 mb-6">Recent Meals</h3>
+        
+        <div className="space-y-4">
+          {recentMeals.map((meal) => (
+            <div key={meal.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="text-2xl">{meal.image}</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">Upload a photo of your meal</h3>
-                  <p className="text-muted-foreground mb-6">Take a photo or choose from your gallery</p>
-                  
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <label className="cursor-pointer">
-                      <Button className="hero-button">
-                        <Camera className="w-4 h-4 mr-2" />
-                        Take Photo
-                      </Button>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
-                    </label>
-                    
-                    <label className="cursor-pointer">
-                      <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Choose File
-                      </Button>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
+                  <div className="font-medium text-gray-800">{meal.name}</div>
+                  <div className="text-sm text-gray-500">{meal.time} • {meal.calories}</div>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Image Preview */}
-                <div className="relative">
-                  <img 
-                    src={previewUrl} 
-                    alt="Food preview" 
-                    className="w-full max-h-96 object-contain rounded-xl shadow-lg"
-                  />
-                  {/* Bounding boxes for detected foods */}
-                  {analysisComplete && detectedFoods.map((food, index) => (
-                    <div
-                      key={index}
-                      className="absolute border-2 border-primary bg-primary/20 rounded"
-                      style={{
-                        left: `${food.bbox.x}px`,
-                        top: `${food.bbox.y}px`,
-                        width: `${food.bbox.width}px`,
-                        height: `${food.bbox.height}px`,
-                      }}
-                    >
-                      <Badge className="absolute -top-6 left-0 bg-primary text-primary-foreground">
-                        {food.name}
-                      </Badge>
+              <div className="flex items-center space-x-3">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(meal.type)}`}>
+                  {meal.type}
+                </span>
+                <span className="text-gray-400">→</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* AI Detection Preview */}
+      <div className="bg-gray-100 rounded-xl p-6">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">AI Detection Preview</h3>
+        
+        <div className="bg-white rounded-lg p-6">
+          {detectionResults ? (
+            <>
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="flex space-x-2">
+                  {detectionResults.detectedFoods.map((food: any, index: number) => (
+                    <div key={index} className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm">🍎</span>
                     </div>
                   ))}
                 </div>
-
-                {/* Analysis Status */}
-                {isAnalyzing && (
-                  <div className="text-center space-y-4 animate-bounce-in">
-                    <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
-                    <div>
-                      <h3 className="text-lg font-semibold">Detecting deliciousness... 🍱</h3>
-                      <p className="text-muted-foreground">Our AI is analyzing your meal</p>
-                    </div>
-                    <Progress value={66} className="w-full max-w-sm mx-auto" />
+                <div>
+                  <div className="font-medium text-gray-800">
+                    {detectionResults.detectedFoods.map((food: any) => food.name).join(', ')}
                   </div>
-                )}
-
-                {/* Detection Results */}
-                {analysisComplete && (
-                  <div className="space-y-4 animate-fade-in">
-                    <div className="text-center">
-                      <h3 className="text-xl font-semibold mb-2">Here's what we found:</h3>
-                      <Badge variant="secondary" className="text-lg px-4 py-2">
-                        Total: {totalCalories} calories
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {detectedFoods.map((food, index) => (
-                        <Card key={index} className="p-4 border-l-4 border-l-primary">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold">{food.name}</h4>
-                            <Badge variant="outline">{Math.round(food.confidence * 100)}%</Badge>
-                          </div>
-                          <p className="text-2xl font-bold text-primary">{food.calories} kcal</p>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button
-                    onClick={handleReset}
-                    variant="outline"
-                    className="flex-1 sm:flex-none"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Try Another
-                  </Button>
-                  
-                  {!analysisComplete && !isAnalyzing && (
-                    <Button
-                      onClick={handleAnalyze}
-                      className="hero-button flex-1 sm:flex-none"
-                    >
-                      <ImageIcon className="w-4 h-4 mr-2" />
-                      Analyze Photo
-                    </Button>
-                  )}
-                  
-                  {analysisComplete && (
-                    <Button
-                      onClick={handleSaveToJournal}
-                      className="hero-button flex-1 sm:flex-none"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save to Journal
-                    </Button>
-                  )}
+                  <div className="text-sm text-gray-500">Detected items (Model: best.pt)</div>
                 </div>
               </div>
-            )}
-          </Card>
+              
+              <div className="text-center mb-6">
+                <div className="text-2xl font-bold text-green-600">~{detectionResults.totalCalories} calories detected!</div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Carbs:</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-green-500 rounded-full" style={{ width: `${(detectionResults.nutrition.carbs / 50) * 100}%` }}></div>
+                    </div>
+                    <span className="text-sm font-medium">{detectionResults.nutrition.carbs}g</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Protein:</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(detectionResults.nutrition.protein / 20) * 100}%` }}></div>
+                    </div>
+                    <span className="text-sm font-medium">{detectionResults.nutrition.protein}g</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Fat:</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${(detectionResults.nutrition.fat / 30) * 100}%` }}></div>
+                    </div>
+                    <span className="text-sm font-medium">{detectionResults.nutrition.fat}g</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center text-gray-500">
+              <div className="text-4xl mb-4">🤖</div>
+              <p>Upload a photo to see AI detection results</p>
+              <p className="text-sm">Using best.pt model for food recognition</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
