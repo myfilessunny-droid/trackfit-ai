@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: yolo-food-detection
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python yolo_inference_service.py
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+    healthCheckPath: /health
+    autoDeploy: true 
