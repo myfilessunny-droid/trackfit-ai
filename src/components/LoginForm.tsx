@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,8 +22,19 @@ export const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      // Simulate authentication - replace with actual Supabase auth
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Real Supabase authentication
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // JWT token is automatically handled by Supabase client
+      console.log("User logged in:", data.user);
+      console.log("Session:", data.session);
       
       toast({
         title: "Welcome back! 👋",
@@ -30,10 +42,11 @@ export const LoginForm = () => {
       });
       
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -65,23 +78,64 @@ export const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      // Simulate authentication - replace with actual Supabase auth
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Real Supabase authentication
+      const { data, error } = await supabase.auth.signUp({
+        email: signupData.email,
+        password: signupData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // JWT token is automatically handled by Supabase client
+      console.log("User signed up:", data.user);
+      console.log("Session:", data.session);
       
       toast({
         title: "Account created! 🎉",
-        description: "Welcome to FitTrack AI!",
+        description: data.session ? "Welcome to FitTrack AI!" : "Please check your email to confirm your account.",
       });
       
-      navigate('/dashboard');
-    } catch (error) {
+      if (data.session) {
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+      console.error("Signup error:", error);
       toast({
         title: "Signup failed",
-        description: "Something went wrong. Please try again.",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("Google OAuth initiated:", data);
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      toast({
+        title: "Google login failed",
+        description: error.message || "Something went wrong with Google login.",
+        variant: "destructive",
+      });
     }
   };
 
