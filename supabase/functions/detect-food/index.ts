@@ -222,8 +222,8 @@ async function processImageWithYOLO(base64Image: string, imageFile: File, reques
   try {
     console.log(`🔍 [${requestId}] YOLO processing started...`);
     
-    // Get YOLO API URL from environment or use default
-    const yoloApiUrl = Deno.env.get('YOLO_API_URL') || 'http://localhost:5000/predict'
+    // Get YOLO API URL from environment or use Render endpoint
+    const yoloApiUrl = Deno.env.get('YOLO_API_URL') || 'https://trackfit-ai.onrender.com/predict'
     const yoloApiKey = Deno.env.get('YOLO_API_KEY') || ''
     
     console.log(`🔍 [${requestId}] YOLO service URL:`, yoloApiUrl);

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Edge Function Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">🔍 Edge Function Test</h1>
+            <p class="text-gray-600">Upload an image to test the Supabase Edge Function</p>
+        </div>
+
+        <!-- Test Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📤 Upload Image</h2>
+            
+            <!-- Image Upload -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Image</label>
+                <input type="file" id="imageFile" accept="image/*" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Test Buttons -->
+            <div class="flex gap-2 mb-4">
+                <button onclick="testEdgeFunction()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    🚀 Test Edge Function
+                </button>
+                <button onclick="testYOLODirect()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                    🎯 Test YOLO Direct
+                </button>
+                <button onclick="clearResults()" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+                    🗑️ Clear Results
+                </button>
+            </div>
+
+            <!-- Image Preview -->
+            <div id="imagePreview" class="hidden mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Image Preview</label>
+                <img id="previewImg" class="max-w-xs border rounded-lg" alt="Preview">
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">📋 Test Results</h2>
+            <div id="resultsList" class="space-y-4">
+                <p class="text-gray-500 text-center">Upload an image and click test to see results.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const EDGE_FUNCTION_URL = "https://yiscgtqmwjcdrgypdjvz.supabase.co/functions/v1/detect-food";
+        const YOLO_SERVICE_URL = "http://localhost:5000/predict";
+        const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpc2NndHFtd2pjZHJneXBkanZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NTU0MTMsImV4cCI6MjA2OTUzMTQxM30.pjWU9SLOLpe1k6uQMeuuZp_ERgyohd4QIoAt9pxzMHQ";
+
+        // Image preview
+        document.getElementById('imageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Test Edge Function
+        async function testEdgeFunction() {
+            const imageFile = document.getElementById('imageFile').files[0];
+            if (!imageFile) {
+                addResult('❌ Error', 'Please select an image file first');
+                return;
+            }
+
+            addResult('🔄 Testing Edge Function', 'Sending image to Edge Function...');
+
+            try {
+                const formData = new FormData();
+                formData.append('image', imageFile);
+
+                const response = await fetch(EDGE_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const detections = result.results?.detectedFoods || [];
+                    addResult('✅ Edge Function Success', 
+                        `Found ${detections.length} detections`, 
+                        {
+                            status: response.status,
+                            detections: detections,
+                            processingTime: result.results?.processingTime,
+                            message: result.message
+                        }
+                    );
+                } else {
+                    addResult('❌ Edge Function Failed', 
+                        `HTTP ${response.status}: ${result.error || 'Unknown error'}`, 
+                        {
+                            status: response.status,
+                            error: result.error,
+                            details: result.details
+                        }
+                    );
+                }
+            } catch (error) {
+                addResult('❌ Edge Function Error', `Request failed: ${error.message}`);
+            }
+        }
+
+        // Test YOLO Direct
+        async function testYOLODirect() {
+            const imageFile = document.getElementById('imageFile').files[0];
+            if (!imageFile) {
+                addResult('❌ Error', 'Please select an image file first');
+                return;
+            }
+
+            addResult('🔄 Testing YOLO Direct', 'Sending image to local YOLO service...');
+
+            try {
+                const base64Image = await fileToBase64(imageFile);
+                
+                const response = await fetch(YOLO_SERVICE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: base64Image,
+                        confidence_threshold: 0.5,
+                        model: 'best.pt'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const detections = result.detections || [];
+                    addResult('✅ YOLO Direct Success', 
+                        `Found ${detections.length} detections`, 
+                        {
+                            status: response.status,
+                            detections: detections,
+                            modelUsed: result.model_used,
+                            success: result.success
+                        }
+                    );
+                } else {
+                    addResult('❌ YOLO Direct Failed', 
+                        `HTTP ${response.status}: ${response.statusText}`, 
+                        {
+                            status: response.status,
+                            error: result.error
+                        }
+                    );
+                }
+            } catch (error) {
+                addResult('❌ YOLO Direct Error', `Request failed: ${error.message}`);
+            }
+        }
+
+        // Utility functions
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function addResult(title, message, details = null) {
+            const resultsList = document.getElementById('resultsList');
+            
+            if (resultsList.children.length === 1 && resultsList.children[0].textContent.includes('Upload an image')) {
+                resultsList.innerHTML = '';
+            }
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'border rounded-lg p-4 bg-gray-50';
+            
+            let detailsHtml = '';
+            if (details) {
+                detailsHtml = `
+                    <details class="mt-2">
+                        <summary class="cursor-pointer text-blue-600 text-sm">View Details</summary>
+                        <pre class="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">${JSON.stringify(details, null, 2)}</pre>
+                    </details>
+                `;
+            }
+
+            resultDiv.innerHTML = `
+                <div class="font-medium">${title}</div>
+                <div class="text-sm text-gray-600">${message}</div>
+                ${detailsHtml}
+                <div class="text-xs text-gray-500 mt-2">${new Date().toLocaleTimeString()}</div>
+            `;
+
+            resultsList.insertBefore(resultDiv, resultsList.firstChild);
+        }
+
+        function clearResults() {
+            document.getElementById('resultsList').innerHTML = '<p class="text-gray-500 text-center">Upload an image and click test to see results.</p>';
+            document.getElementById('imageFile').value = '';
+            document.getElementById('imagePreview').classList.add('hidden');
+        }
+    </script>
+</body>
+</html> 

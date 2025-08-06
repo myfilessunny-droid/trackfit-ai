@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackFit AI - Render YOLO Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #f0f0f0;
+            border-radius: 15px;
+            background: #fafafa;
+        }
+
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .image-upload {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 15px 0;
+            background: #fafafa;
+            transition: border-color 0.3s;
+        }
+
+        .image-upload:hover {
+            border-color: #667eea;
+        }
+
+        .image-upload input[type="file"] {
+            display: none;
+        }
+
+        .image-preview {
+            max-width: 300px;
+            max-height: 200px;
+            margin: 15px auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .detection-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .confidence-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .summary h4 {
+            margin-bottom: 10px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 TrackFit AI</h1>
+            <p>Render YOLO Model Testing Dashboard</p>
+        </div>
+
+        <div class="content">
+            <!-- Health Check Section -->
+            <div class="test-section">
+                <h3>🔍 Health Check</h3>
+                <p>Test if the Render service is running and the model is loaded.</p>
+                <button class="btn" onclick="testHealth()">Test Health</button>
+                <div id="healthResult" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Root Endpoint Section -->
+            <div class="test-section">
+                <h3>🏠 Root Endpoint</h3>
+                <p>Test the root endpoint of the Render service.</p>
+                <button class="btn" onclick="testRoot()">Test Root</button>
+                <div id="rootResult" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Image Upload Section -->
+            <div class="test-section">
+                <h3>📸 Food Detection Test</h3>
+                <p>Upload an image to test the YOLO food detection model.</p>
+                
+                <div class="image-upload" onclick="document.getElementById('imageInput').click()">
+                    <input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(event)">
+                    <p>📁 Click to select an image or drag and drop</p>
+                    <p style="font-size: 0.9em; color: #666;">Supports: JPG, PNG, GIF (Max: 10MB)</p>
+                </div>
+
+                <div id="imagePreview" style="display: none; position: relative;">
+                    <img id="previewImg" class="image-preview">
+                    <canvas id="bboxCanvas" style="position:absolute; left:0; top:0; pointer-events:none;"></canvas>
+                    <button class="btn btn-success" onclick="testPrediction()">🚀 Test Prediction</button>
+                </div>
+
+                <div id="predictionResult" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Error Testing Section -->
+            <div class="test-section">
+                <h3>⚠️ Error Testing</h3>
+                <p>Test error handling with invalid requests.</p>
+                <button class="btn btn-danger" onclick="testNoImage()">Test No Image</button>
+                <button class="btn btn-danger" onclick="testInvalidPayload()">Test Invalid Payload</button>
+                <div id="errorResult" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary">
+                <h4>📊 Test Summary</h4>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalTests">0</div>
+                        <div class="stat-label">Total Tests</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="passedTests">0</div>
+                        <div class="stat-label">Passed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="failedTests">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="successRate">0%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const RENDER_URL = 'https://trackfit-ai.onrender.com';
+        let selectedImage = null;
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0
+        };
+
+        function updateSummary() {
+            document.getElementById('totalTests').textContent = testResults.total;
+            document.getElementById('passedTests').textContent = testResults.passed;
+            document.getElementById('failedTests').textContent = testResults.failed;
+            document.getElementById('successRate').textContent = 
+                testResults.total > 0 ? Math.round((testResults.passed / testResults.total) * 100) + '%' : '0%';
+        }
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '<div class="loading"></div> Testing...';
+            element.className = 'result info';
+            element.style.display = 'block';
+        }
+
+        async function testHealth() {
+            showLoading('healthResult');
+            testResults.total++;
+            
+            try {
+                const response = await fetch(`${RENDER_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    testResults.passed++;
+                    showResult('healthResult', 
+                        `✅ Health Check PASSED\n\nStatus: ${response.status}\nModel Loaded: ${data.model_loaded}\nModel Info: ${JSON.stringify(data.model_info, null, 2)}`, 
+                        'success'
+                    );
+                } else {
+                    testResults.failed++;
+                    showResult('healthResult', 
+                        `❌ Health Check FAILED\n\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                testResults.failed++;
+                showResult('healthResult', 
+                    `❌ Health Check ERROR\n\nError: ${error.message}`, 
+                    'error'
+                );
+            }
+            updateSummary();
+        }
+
+        async function testRoot() {
+            showLoading('rootResult');
+            testResults.total++;
+            
+            try {
+                const response = await fetch(RENDER_URL);
+                const text = await response.text();
+                
+                if (response.ok) {
+                    testResults.passed++;
+                    showResult('rootResult', 
+                        `✅ Root Endpoint PASSED\n\nStatus: ${response.status}\nResponse: ${text.substring(0, 200)}...`, 
+                        'success'
+                    );
+                } else {
+                    testResults.failed++;
+                    showResult('rootResult', 
+                        `❌ Root Endpoint FAILED\n\nStatus: ${response.status}\nResponse: ${text}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                testResults.failed++;
+                showResult('rootResult', 
+                    `❌ Root Endpoint ERROR\n\nError: ${error.message}`, 
+                    'error'
+                );
+            }
+            updateSummary();
+        }
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedImage = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function testPrediction() {
+            if (!selectedImage) {
+                alert('Please select an image first!');
+                return;
+            }
+
+            showLoading('predictionResult');
+            testResults.total++;
+            
+            try {
+                // Convert image to base64
+                const base64 = await fileToBase64(selectedImage);
+                
+                const response = await fetch(`${RENDER_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: base64,
+                        confidence_threshold: 0.5
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    testResults.passed++;
+                    let resultText = `✅ Prediction PASSED\n\nStatus: ${response.status}\nSuccess: ${data.success}\nDetections: ${data.detections?.length || 0}\n\n`;
+                    
+                    if (data.detections && data.detections.length > 0) {
+                        resultText += 'Detected Foods:\n';
+                        data.detections.forEach((detection, index) => {
+                            const confidence = (detection.confidence * 100).toFixed(1);
+                            resultText += `${index + 1}. ${detection.name} (${confidence}%)\n`;
+                        });
+                        // Draw bounding boxes
+                        drawBoundingBoxes(data.detections);
+                    } else {
+                        resultText += 'No detections found\n';
+                        drawBoundingBoxes([]); // Clear boxes
+                    }
+                    
+                    showResult('predictionResult', resultText, 'success');
+                } else {
+                    testResults.failed++;
+                    showResult('predictionResult', 
+                        `❌ Prediction FAILED\n\nStatus: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                    drawBoundingBoxes([]); // Clear boxes
+                }
+            } catch (error) {
+                testResults.failed++;
+                showResult('predictionResult', 
+                    `❌ Prediction ERROR\n\nError: ${error.message}`, 
+                    'error'
+                );
+                drawBoundingBoxes([]); // Clear boxes
+            }
+            updateSummary();
+        }
+
+        function drawBoundingBoxes(detections) {
+            const img = document.getElementById('previewImg');
+            const canvas = document.getElementById('bboxCanvas');
+            if (!img || !canvas) return;
+            // Set canvas size to match image
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.style.width = img.width + 'px';
+            canvas.style.height = img.height + 'px';
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!detections || detections.length === 0) return;
+            // Draw each bbox
+            detections.forEach(det => {
+                // bbox: [x1, y1, x2, y2] in pixel coordinates
+                const [x1, y1, x2, y2] = det.bbox;
+                // Scale to displayed image size
+                const scaleX = img.width / img.naturalWidth;
+                const scaleY = img.height / img.naturalHeight;
+                ctx.strokeStyle = '#ff416c';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x1 * scaleX, y1 * scaleY, (x2 - x1) * scaleX, (y2 - y1) * scaleY);
+                // Draw label and confidence
+                ctx.font = '16px Segoe UI';
+                ctx.fillStyle = '#ff416c';
+                const label = `${det.name} ${(det.confidence * 100).toFixed(1)}%`;
+                ctx.fillText(label, x1 * scaleX + 2, y1 * scaleY + 18);
+            });
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function testNoImage() {
+            showLoading('errorResult');
+            testResults.total++;
+            
+            try {
+                const response = await fetch(`${RENDER_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        confidence_threshold: 0.5
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.status === 400) {
+                    testResults.passed++;
+                    showResult('errorResult', 
+                        `✅ No Image Test PASSED (correctly rejected)\n\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success'
+                    );
+                } else {
+                    testResults.failed++;
+                    showResult('errorResult', 
+                        `❌ No Image Test FAILED (should have been rejected)\n\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                testResults.failed++;
+                showResult('errorResult', 
+                    `❌ No Image Test ERROR\n\nError: ${error.message}`, 
+                    'error'
+                );
+            }
+            updateSummary();
+        }
+
+        async function testInvalidPayload() {
+            showLoading('errorResult');
+            testResults.total++;
+            
+            try {
+                const response = await fetch(`${RENDER_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        invalid_field: 'test'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.status === 400) {
+                    testResults.passed++;
+                    showResult('errorResult', 
+                        `✅ Invalid Payload Test PASSED (correctly rejected)\n\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success'
+                    );
+                } else {
+                    testResults.failed++;
+                    showResult('errorResult', 
+                        `❌ Invalid Payload Test FAILED\n\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                testResults.failed++;
+                showResult('errorResult', 
+                    `❌ Invalid Payload Test ERROR\n\nError: ${error.message}`, 
+                    'error'
+                );
+            }
+            updateSummary();
+        }
+
+        // Initialize summary
+        updateSummary();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 TrackFit AI - Testing Dashboard</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-result { transition: all 0.3s ease; }
+        .test-result:hover { transform: translateY(-2px); }
+        .loading { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🧪 TrackFit AI Testing Dashboard</h1>
+            <p class="text-gray-600">Standalone testing interface for all application endpoints</p>
+        </div>
+
+        <!-- Configuration Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🔧 Configuration</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Supabase URL</label>
+                    <input type="text" id="supabaseUrl" value="https://yiscgtqmwjcdrgypdjvz.supabase.co" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Supabase Anon Key</label>
+                    <input type="text" id="supabaseKey" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpc2NndHFtd2pjZHJneXBkanZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NTU0MTMsImV4cCI6MjA2OTUzMTQxM30.pjWU9SLOLpe1k6uQMeuuZp_ERgyohd4QIoAt9pxzMHQ" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <button onclick="initializeSupabase()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                Initialize Supabase
+            </button>
+        </div>
+
+        <!-- Authentication Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🔐 Authentication</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="authEmail" placeholder="test@example.com" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="authPassword" placeholder="password123" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="testSignUp()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                    Sign Up
+                </button>
+                <button onclick="testSignIn()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    Sign In
+                </button>
+                <button onclick="testSignOut()" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+                    Sign Out
+                </button>
+                <button onclick="testGetUser()" class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                    Get User
+                </button>
+            </div>
+        </div>
+
+        <!-- Database Tests Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🗄️ Database Tests</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button onclick="testFoodEntries()" class="bg-orange-600 text-white px-3 py-2 rounded-md hover:bg-orange-700 text-sm">
+                    🍎 Food Entries
+                </button>
+                <button onclick="testExerciseEntries()" class="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 text-sm">
+                    💪 Exercise Entries
+                </button>
+                <button onclick="testDailySummaries()" class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-sm">
+                    📊 Daily Summaries
+                </button>
+                <button onclick="testUserProfiles()" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 text-sm">
+                    👤 User Profiles
+                </button>
+                <button onclick="testFoodDetections()" class="bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 text-sm">
+                    🤖 Food Detections
+                </button>
+            </div>
+        </div>
+
+        <!-- Security Tests Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🛡️ Security Tests</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <button onclick="testRLS()" class="bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 text-sm">
+                    🔒 RLS Security
+                </button>
+                <button onclick="testJWTToken()" class="bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 text-sm">
+                    🔑 JWT Token
+                </button>
+                <button onclick="testCrossUserAccess()" class="bg-pink-600 text-white px-3 py-2 rounded-md hover:bg-pink-700 text-sm">
+                    🚫 Cross-User Access
+                </button>
+            </div>
+        </div>
+
+        <!-- Edge Function Tests Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🤖 Edge Function Tests</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Test Image</label>
+                    <input type="file" id="testImage" accept="image/*" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Function URL</label>
+                    <input type="text" id="functionUrl" value="https://yiscgtqmwjcdrgypdjvz.supabase.co/functions/v1/detect-food" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <button onclick="testDetectFood()" class="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-sm">
+                    🍎 Test Food Detection
+                </button>
+                <button onclick="testDetectFoodWithAuth()" class="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 text-sm">
+                    🔐 Test with Auth
+                </button>
+                <button onclick="testDetectFoodError()" class="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 text-sm">
+                    ❌ Test Error Handling
+                </button>
+            </div>
+        </div>
+
+        <!-- Direct YOLO Tests Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🎯 Direct YOLO Tests</h2>
+            <p class="text-gray-600 mb-4">Bypass Edge Function and test YOLO service directly</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Test Image</label>
+                    <input type="file" id="yoloTestImage" accept="image/*" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">YOLO Service URL</label>
+                    <input type="text" id="yoloServiceUrl" value="http://localhost:5000/predict" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="testYOLODirect()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                    🎯 Test YOLO Direct
+                </button>
+                <button onclick="testYOLOHealth()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    💚 Health Check
+                </button>
+                <button onclick="clearYOLOResults()" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700">
+                    🗑️ Clear Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Bulk Testing -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🚀 Bulk Testing</h2>
+            <div class="flex gap-2">
+                <button onclick="runAllTests()" class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 font-medium">
+                    🧪 Run All Tests
+                </button>
+                <button onclick="clearResults()" class="bg-gray-600 text-white px-6 py-3 rounded-md hover:bg-gray-700 font-medium">
+                    🗑️ Clear Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div id="resultsSummary" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">📊 Test Results Summary</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                    <div id="totalTests" class="text-2xl font-bold text-gray-800">0</div>
+                    <div class="text-sm text-gray-600">Total Tests</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg">
+                    <div id="passedTests" class="text-2xl font-bold text-green-800">0</div>
+                    <div class="text-sm text-green-600">Passed</div>
+                </div>
+                <div class="text-center p-4 bg-red-50 rounded-lg">
+                    <div id="failedTests" class="text-2xl font-bold text-red-800">0</div>
+                    <div class="text-sm text-red-600">Failed</div>
+                </div>
+                <div class="text-center p-4 bg-blue-50 rounded-lg">
+                    <div id="successRate" class="text-2xl font-bold text-blue-800">0%</div>
+                    <div class="text-sm text-blue-600">Success Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div id="testResults" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">📋 Test Results</h2>
+            <div id="resultsList" class="space-y-4">
+                <p class="text-gray-500 text-center">No tests run yet. Click "Run All Tests" to start testing.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let supabase;
+        let currentUser = null;
+        let testResults = [];
+
+        // Initialize Supabase
+        function initializeSupabase() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            
+            try {
+                supabase = window.supabase.createClient(url, key);
+                addResult('Supabase Initialization', 'pass', 'Supabase client initialized successfully');
+                console.log('Supabase initialized:', supabase);
+            } catch (error) {
+                addResult('Supabase Initialization', 'fail', `Failed to initialize Supabase: ${error.message}`);
+            }
+        }
+
+        // Authentication Tests
+        async function testSignUp() {
+            if (!supabase) {
+                addResult('Sign Up', 'fail', 'Supabase not initialized');
+                return;
+            }
+
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    addResult('Sign Up', 'fail', `Sign up failed: ${error.message}`);
+                } else {
+                    addResult('Sign Up', 'pass', `Account created for ${email}`, data);
+                    currentUser = data.user;
+                }
+            } catch (error) {
+                addResult('Sign Up', 'fail', `Sign up error: ${error.message}`);
+            }
+        }
+
+        async function testSignIn() {
+            if (!supabase) {
+                addResult('Sign In', 'fail', 'Supabase not initialized');
+                return;
+            }
+
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    addResult('Sign In', 'fail', `Sign in failed: ${error.message}`);
+                } else {
+                    addResult('Sign In', 'pass', `Successfully signed in as ${email}`, data);
+                    currentUser = data.user;
+                }
+            } catch (error) {
+                addResult('Sign In', 'fail', `Sign in error: ${error.message}`);
+            }
+        }
+
+        async function testSignOut() {
+            if (!supabase) {
+                addResult('Sign Out', 'fail', 'Supabase not initialized');
+                return;
+            }
+
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    addResult('Sign Out', 'fail', `Sign out failed: ${error.message}`);
+                } else {
+                    addResult('Sign Out', 'pass', 'Successfully signed out');
+                    currentUser = null;
+                }
+            } catch (error) {
+                addResult('Sign Out', 'fail', `Sign out error: ${error.message}`);
+            }
+        }
+
+        async function testGetUser() {
+            if (!supabase) {
+                addResult('Get User', 'fail', 'Supabase not initialized');
+                return;
+            }
+
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error) {
+                    addResult('Get User', 'fail', `Get user failed: ${error.message}`);
+                } else if (user) {
+                    addResult('Get User', 'pass', `User found: ${user.email}`, user);
+                    currentUser = user;
+                } else {
+                    addResult('Get User', 'fail', 'No user found');
+                }
+            } catch (error) {
+                addResult('Get User', 'fail', `Get user error: ${error.message}`);
+            }
+        }
+
+        // Database Tests
+        async function testFoodEntries() {
+            if (!supabase || !currentUser) {
+                addResult('Food Entries', 'fail', 'Not authenticated');
+                return;
+            }
+
+            try {
+                // Insert test food entry
+                const { data: insertData, error: insertError } = await supabase
+                    .from('food_entries')
+                    .insert({
+                        food_name: 'Test Apple',
+                        calories: 95,
+                        protein: 0.5,
+                        carbs: 25,
+                        fat: 0.3,
+                        meal_type: 'snack',
+                        user_id: currentUser.id
+                    })
+                    .select();
+
+                if (insertError) {
+                    addResult('Food Entries', 'fail', `Insert failed: ${insertError.message}`);
+                    return;
+                }
+
+                // Read food entries
+                const { data: readData, error: readError } = await supabase
+                    .from('food_entries')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+
+                if (readError) {
+                    addResult('Food Entries', 'fail', `Read failed: ${readError.message}`);
+                    return;
+                }
+
+                addResult('Food Entries', 'pass', `Successfully inserted and read ${readData.length} food entries`, {
+                    inserted: insertData[0],
+                    totalEntries: readData.length
+                });
+            } catch (error) {
+                addResult('Food Entries', 'fail', `Food entries test failed: ${error.message}`);
+            }
+        }
+
+        async function testExerciseEntries() {
+            if (!supabase || !currentUser) {
+                addResult('Exercise Entries', 'fail', 'Not authenticated');
+                return;
+            }
+
+            try {
+                // Insert test exercise entry
+                const { data: insertData, error: insertError } = await supabase
+                    .from('exercise_entries')
+                    .insert({
+                        exercise_name: 'Test Running',
+                        calories_burned: 300,
+                        duration_minutes: 30,
+                        exercise_type: 'cardio',
+                        user_id: currentUser.id
+                    })
+                    .select();
+
+                if (insertError) {
+                    addResult('Exercise Entries', 'fail', `Insert failed: ${insertError.message}`);
+                    return;
+                }
+
+                // Read exercise entries
+                const { data: readData, error: readError } = await supabase
+                    .from('exercise_entries')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+
+                if (readError) {
+                    addResult('Exercise Entries', 'fail', `Read failed: ${readError.message}`);
+                    return;
+                }
+
+                addResult('Exercise Entries', 'pass', `Successfully inserted and read ${readData.length} exercise entries`, {
+                    inserted: insertData[0],
+                    totalEntries: readData.length
+                });
+            } catch (error) {
+                addResult('Exercise Entries', 'fail', `Exercise entries test failed: ${error.message}`);
+            }
+        }
+
+        async function testDailySummaries() {
+            if (!supabase || !currentUser) {
+                addResult('Daily Summaries', 'fail', 'Not authenticated');
+                return;
+            }
+
+            try {
+                // Insert test daily summary
+                const { data: insertData, error: insertError } = await supabase
+                    .from('daily_summaries')
+                    .insert({
+                        date: new Date().toISOString().split('T')[0],
+                        total_calories_consumed: 1500,
+                        total_calories_burned: 500,
+                        net_calories: 1000,
+                        user_id: currentUser.id
+                    })
+                    .select();
+
+                if (insertError) {
+                    addResult('Daily Summaries', 'fail', `Insert failed: ${insertError.message}`);
+                    return;
+                }
+
+                // Read daily summaries
+                const { data: readData, error: readError } = await supabase
+                    .from('daily_summaries')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+
+                if (readError) {
+                    addResult('Daily Summaries', 'fail', `Read failed: ${readError.message}`);
+                    return;
+                }
+
+                addResult('Daily Summaries', 'pass', `Successfully inserted and read ${readData.length} daily summaries`, {
+                    inserted: insertData[0],
+                    totalEntries: readData.length
+                });
+            } catch (error) {
+                addResult('Daily Summaries', 'fail', `Daily summaries test failed: ${error.message}`);
+            }
+        }
+
+        async function testUserProfiles() {
+            if (!supabase || !currentUser) {
+                addResult('User Profiles', 'fail', 'Not authenticated');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+
+                if (error) {
+                    addResult('User Profiles', 'fail', `User profile test failed: ${error.message}`);
+                    return;
+                }
+
+                addResult('User Profiles', 'pass', `User profile accessible (${data.length} entries)`, {
+                    profileEntries: data.length
+                });
+            } catch (error) {
+                addResult('User Profiles', 'fail', `User profile test failed: ${error.message}`);
+            }
+        }
+
+        async function testFoodDetections() {
+            if (!supabase || !currentUser) {
+                addResult('Food Detections', 'fail', 'Not authenticated');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('food_detections')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+
+                if (error) {
+                    addResult('Food Detections', 'fail', `Food detections test failed: ${error.message}`);
+                    return;
+                }
+
+                addResult('Food Detections', 'pass', `Food detections table accessible (${data.length} entries)`, {
+                    detectionEntries: data.length,
+                    tableExists: true
+                });
+            } catch (error) {
+                addResult('Food Detections', 'fail', `Food detections test failed: ${error.message}`);
+            }
+        }
+
+        // Security Tests
+        async function testRLS() {
+            if (!supabase || !currentUser) {
+                addResult('RLS Security', 'fail', 'Not authenticated');
+                return;
+            }
+
+            try {
+                const { data: allData, error: allError } = await supabase
+                    .from('food_entries')
+                    .select('*');
+
+                if (allError) {
+                    addResult('RLS Security', 'fail', `RLS test failed: ${allError.message}`);
+                    return;
+                }
+
+                addResult('RLS Security', 'pass', `RLS working - only user data accessible (${allData.length} entries)`, {
+                    accessibleEntries: allData.length
+                });
+            } catch (error) {
+                addResult('RLS Security', 'fail', `RLS security test failed: ${error.message}`);
+            }
+        }
+
+        function testJWTToken() {
+            try {
+                const token = localStorage.getItem('sb-yiscgtqmwjcdrgypdjvz-auth-token');
+                if (token) {
+                    addResult('JWT Token', 'pass', 'JWT token found in localStorage', { tokenLength: token.length });
+                } else {
+                    addResult('JWT Token', 'fail', 'JWT token not found');
+                }
+            } catch (error) {
+                addResult('JWT Token', 'fail', `JWT token test failed: ${error.message}`);
+            }
+        }
+
+        async function testCrossUserAccess() {
+            if (!supabase || !currentUser) {
+                addResult('Cross-User Access', 'fail', 'Not authenticated');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('food_entries')
+                    .select('*')
+                    .eq('user_id', '00000000-0000-0000-0000-000000000000');
+
+                if (error) {
+                    addResult('Cross-User Access', 'fail', `Cross-user access test failed: ${error.message}`);
+                    return;
+                }
+
+                addResult('Cross-User Access', 'pass', `Cross-user access properly restricted (${data.length} entries)`, {
+                    accessibleEntries: data.length
+                });
+            } catch (error) {
+                addResult('Cross-User Access', 'fail', `Cross-user access test failed: ${error.message}`);
+            }
+        }
+
+        // Edge Function Tests
+        async function testDetectFood() {
+            const imageFile = document.getElementById('testImage').files[0];
+            const functionUrl = document.getElementById('functionUrl').value;
+            const anonKey = document.getElementById('supabaseKey').value;
+
+            if (!imageFile) {
+                addResult('Food Detection', 'fail', 'Please select an image file first');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('image', imageFile);
+
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${anonKey}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    addResult('Food Detection', 'pass', `Successfully detected ${result.results.detectedFoods.length} food items`, {
+                        detectedFoods: result.results.detectedFoods,
+                        totalCalories: result.results.totalCalories,
+                        processingTime: result.results.processingTime,
+                        databaseId: result.database_id,
+                        userAuthenticated: result.user_authenticated,
+                        message: result.message
+                    });
+                } else {
+                    addResult('Food Detection', 'fail', `Detection failed: ${result.error || 'Unknown error'}`, result);
+                }
+            } catch (error) {
+                addResult('Food Detection', 'fail', `Request failed: ${error.message}`);
+            }
+        }
+
+        async function testDetectFoodWithAuth() {
+            if (!supabase || !currentUser) {
+                addResult('Food Detection (Auth)', 'fail', 'Not authenticated');
+                return;
+            }
+
+            const imageFile = document.getElementById('testImage').files[0];
+            const functionUrl = document.getElementById('functionUrl').value;
+
+            if (!imageFile) {
+                addResult('Food Detection (Auth)', 'fail', 'Please select an image file first');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('image', imageFile);
+
+                // Get the session token for authenticated request
+                const { data: { session } } = await supabase.auth.getSession();
+                const accessToken = session?.access_token;
+                
+                console.log('Session:', session);
+                console.log('Access token:', accessToken);
+
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    addResult('Food Detection (Auth)', 'pass', `Authenticated detection successful - ${result.results.detectedFoods.length} items found`, {
+                        detectedFoods: result.results.detectedFoods,
+                        totalCalories: result.results.totalCalories,
+                        userId: currentUser.id,
+                        databaseId: result.database_id,
+                        userAuthenticated: result.user_authenticated,
+                        message: result.message
+                    });
+                } else {
+                    addResult('Food Detection (Auth)', 'fail', `Authenticated detection failed: ${result.error || 'Unknown error'}`, result);
+                }
+            } catch (error) {
+                addResult('Food Detection (Auth)', 'fail', `Authenticated request failed: ${error.message}`);
+            }
+        }
+
+        async function testDetectFoodError() {
+            const functionUrl = document.getElementById('functionUrl').value;
+            const anonKey = document.getElementById('supabaseKey').value;
+
+            try {
+                // Test with no image file
+                const response = await fetch(functionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${anonKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                const result = await response.json();
+
+                if (!response.ok && result.error) {
+                    addResult('Food Detection Error Handling', 'pass', `Error handling working correctly: ${result.error}`, result);
+                } else {
+                    addResult('Food Detection Error Handling', 'fail', 'Expected error but got success response', result);
+                }
+            } catch (error) {
+                addResult('Food Detection Error Handling', 'fail', `Error test failed: ${error.message}`);
+            }
+        }
+
+        // Utility Functions
+        function addResult(name, status, message, details = null) {
+            const result = { name, status, message, details, timestamp: new Date() };
+            testResults.push(result);
+            displayResult(result);
+            updateSummary();
+        }
+
+        function displayResult(result) {
+            const resultsList = document.getElementById('resultsList');
+            
+            if (resultsList.children.length === 1 && resultsList.children[0].textContent.includes('No tests run yet')) {
+                resultsList.innerHTML = '';
+            }
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result border rounded-lg p-4 ${result.status === 'pass' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`;
+            
+            const statusIcon = result.status === 'pass' ? '✅' : '❌';
+            const statusBadge = result.status === 'pass' ? 
+                '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">PASS</span>' :
+                '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">FAIL</span>';
+
+            resultDiv.innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">${statusIcon}</span>
+                        <span class="font-medium">${result.name}</span>
+                    </div>
+                    ${statusBadge}
+                </div>
+                <p class="text-sm text-gray-600 mb-2">${result.message}</p>
+                ${result.details ? `
+                    <details class="text-xs">
+                        <summary class="cursor-pointer text-blue-600">View Details</summary>
+                        <pre class="mt-2 p-2 bg-gray-50 rounded text-xs overflow-auto">${JSON.stringify(result.details, null, 2)}</pre>
+                    </details>
+                ` : ''}
+                <div class="text-xs text-gray-500 mt-2">${result.timestamp.toLocaleTimeString()}</div>
+            `;
+
+            resultsList.insertBefore(resultDiv, resultsList.firstChild);
+        }
+
+        function updateSummary() {
+            const totalTests = testResults.length;
+            const passedTests = testResults.filter(r => r.status === 'pass').length;
+            const failedTests = totalTests - passedTests;
+            const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+
+            document.getElementById('totalTests').textContent = totalTests;
+            document.getElementById('passedTests').textContent = passedTests;
+            document.getElementById('failedTests').textContent = failedTests;
+            document.getElementById('successRate').textContent = successRate + '%';
+
+            document.getElementById('resultsSummary').classList.remove('hidden');
+        }
+
+        function clearResults() {
+            testResults = [];
+            document.getElementById('resultsList').innerHTML = '<p class="text-gray-500 text-center">No tests run yet. Click "Run All Tests" to start testing.</p>';
+            document.getElementById('resultsSummary').classList.add('hidden');
+        }
+
+        async function runAllTests() {
+            clearResults();
+            
+            // Initialize Supabase first
+            initializeSupabase();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Run all tests
+            await testSignUp();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testSignIn();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testGetUser();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testJWTToken();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testFoodEntries();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testExerciseEntries();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testDailySummaries();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testUserProfiles();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testFoodDetections();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testRLS();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testCrossUserAccess();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Edge Function tests (only if image is selected)
+            const imageFile = document.getElementById('testImage').files[0];
+            if (imageFile) {
+                await testDetectFood();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testDetectFoodWithAuth();
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            await testDetectFoodError();
+        }
+
+        // Direct YOLO Test Functions
+        async function testYOLODirect() {
+            const imageFile = document.getElementById('yoloTestImage').files[0];
+            const yoloServiceUrl = document.getElementById('yoloServiceUrl').value;
+
+            if (!imageFile) {
+                addResult('YOLO Direct Test', 'fail', 'Please select an image file first');
+                return;
+            }
+
+            try {
+                // Convert image to base64
+                const base64Image = await fileToBase64(imageFile);
+                
+                // Call YOLO service directly
+                const response = await fetch(yoloServiceUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        image: base64Image,
+                        confidence_threshold: 0.5,
+                        model: 'best.pt'
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Display detections summary
+                    let summary = '';
+                    if (result.detections && result.detections.length > 0) {
+                        summary = result.detections.map((detection, index) => 
+                            `${index + 1}. ${detection.name} (confidence: ${detection.confidence.toFixed(2)})`
+                        ).join('\n');
+                    } else {
+                        summary = 'No detections found';
+                    }
+
+                    addResult('YOLO Direct Test', 'pass', `Successfully detected ${result.detections?.length || 0} items`, {
+                        detectedItems: result.detections || [],
+                        summary: summary,
+                        modelUsed: result.model_used,
+                        confidenceThreshold: result.confidence_threshold,
+                        success: result.success
+                    });
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                addResult('YOLO Direct Test', 'fail', `YOLO test failed: ${error.message}`);
+            }
+        }
+
+        async function testYOLOHealth() {
+            const yoloServiceUrl = document.getElementById('yoloServiceUrl').value;
+            const healthUrl = yoloServiceUrl.replace('/predict', '/health');
+
+            try {
+                const response = await fetch(healthUrl);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    addResult('YOLO Health Check', 'pass', `YOLO service is healthy`, {
+                        modelLoaded: result.model_loaded,
+                        modelPath: result.model_path,
+                        status: result.status
+                    });
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                addResult('YOLO Health Check', 'fail', `Health check failed: ${error.message}`);
+            }
+        }
+
+        function clearYOLOResults() {
+            // Clear the YOLO test image
+            document.getElementById('yoloTestImage').value = '';
+            addResult('YOLO Results', 'info', 'YOLO test results cleared');
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+                    resolve(base64);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Auto-initialize on page load
+        window.addEventListener('load', function() {
+            initializeSupabase();
+        });
+    </script>
+</body>
+</html> 

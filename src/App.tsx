@@ -7,7 +7,7 @@ import Journal from './pages/Journal';
 import AskAgent from './pages/AskAgent';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
-import TestDashboard from './pages/TestDashboard';
+
 import { DataProvider } from './context/DataContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './context/DataContext';
@@ -24,7 +24,7 @@ function Navigation() {
     { id: 'journal', name: 'Journal', icon: '📊', path: '/journal' },
     { id: 'ask-agent', name: 'Ask Agent', icon: '🤖', path: '/ask-agent' },
     { id: 'profile', name: 'Profile', icon: '👤', path: '/profile' },
-    { id: 'test-dashboard', name: 'Test Dashboard', icon: '🧪', path: '/test' },
+    // { id: 'test-dashboard', name: 'Test Dashboard', icon: '🧪', path: '/test' },
   ];
 
   const getActivePage = () => {
@@ -130,7 +130,8 @@ function AppContent() {
             <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
             <Route path="/ask-agent" element={<ProtectedRoute><AskAgent /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/test" element={<ProtectedRoute><TestDashboard /></ProtectedRoute>} />
+
+            {/* <Route path="/test" element={<ProtectedRoute><TestDashboard /></ProtectedRoute>} /> */}
           </Routes>
         </div>
       </div>

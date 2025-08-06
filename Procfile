@@ -1,0 +1,1 @@
+web: python yolo_inference_service.py 

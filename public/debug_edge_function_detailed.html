@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Detailed Edge Function Debug</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">🔍 Detailed Edge Function Debug</h1>
+            <p class="text-gray-600">Test file parsing, authentication, and identify exact failure points</p>
+        </div>
+
+        <!-- Configuration Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">⚙️ Configuration</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Edge Function URL</label>
+                    <input type="text" id="edgeFunctionUrl" value="https://yiscgtqmwjcdrgypdjvz.supabase.co/functions/v1/detect-food" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Anon Key</label>
+                    <input type="text" id="anonKey" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpc2NndHFtd2pjZHJneXBkanZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NTU0MTMsImV4cCI6MjA2OTUzMTQxM30.pjWU9SLOLpe1k6uQMeuuZp_ERgyohd4QIoAt9pxzMHQ" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🔐 Authentication Tests</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="authEmail" placeholder="test@example.com" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="authPassword" placeholder="password123" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="testSignIn()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    🔐 Sign In
+                </button>
+                <button onclick="testGetUser()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                    👤 Get User
+                </button>
+                <button onclick="testSignOut()" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+                    🚪 Sign Out
+                </button>
+            </div>
+        </div>
+
+        <!-- File Upload Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📁 File Upload Tests</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Image</label>
+                <input type="file" id="imageFile" accept="image/*" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- File Info Display -->
+            <div id="fileInfo" class="hidden mb-4 p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-medium mb-2">📋 File Information</h3>
+                <div id="fileDetails" class="text-sm text-gray-600"></div>
+            </div>
+
+            <!-- Test Buttons -->
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="testFileParsing()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                    🔍 Test File Parsing
+                </button>
+                <button onclick="testEdgeFunctionNoAuth()" class="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700">
+                    🚫 Test No Auth
+                </button>
+                <button onclick="testEdgeFunctionWithAuth()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+                    ✅ Test With Auth
+                </button>
+                <button onclick="testEdgeFunctionWithToken()" class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                    🎫 Test With Token
+                </button>
+            </div>
+        </div>
+
+        <!-- Request Details Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📡 Request Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Request Headers</label>
+                    <textarea id="requestHeaders" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Request Body Size</label>
+                    <input type="text" id="requestBodySize" readonly 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">📋 Debug Results</h2>
+            <div id="resultsList" class="space-y-4">
+                <p class="text-gray-500 text-center">Select a file and run tests to see detailed results.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuration
+        const SUPABASE_URL = "https://yiscgtqmwjcdrgypdjvz.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpc2NndHFtd2pjZHJneXBkanZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NTU0MTMsImV4cCI6MjA2OTUzMTQxM30.pjWU9SLOLpe1k6uQMeuuZp_ERgyohd4QIoAt9pxzMHQ";
+        
+        let supabase;
+        let currentUser = null;
+
+        // Initialize Supabase
+        function initializeSupabase() {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            addResult('🔧 Supabase Initialized', 'System ready');
+        }
+
+        // File upload handler
+        document.getElementById('imageFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                displayFileInfo(file);
+            }
+        });
+
+        function displayFileInfo(file) {
+            const fileInfo = document.getElementById('fileInfo');
+            const fileDetails = document.getElementById('fileDetails');
+            
+            fileDetails.innerHTML = `
+                <div><strong>Name:</strong> ${file.name}</div>
+                <div><strong>Type:</strong> ${file.type}</div>
+                <div><strong>Size:</strong> ${(file.size / 1024).toFixed(2)} KB</div>
+                <div><strong>Last Modified:</strong> ${new Date(file.lastModified).toLocaleString()}</div>
+            `;
+            
+            fileInfo.classList.remove('hidden');
+        }
+
+        // Authentication Tests
+        async function testSignIn() {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            addResult('🔄 Sign In', 'Attempting to sign in...');
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    addResult('❌ Sign In Failed', error.message);
+                } else {
+                    currentUser = data.user;
+                    addResult('✅ Sign In Success', `Signed in as ${email}`, {
+                        userId: data.user.id,
+                        email: data.user.email
+                    });
+                }
+            } catch (error) {
+                addResult('❌ Sign In Error', error.message);
+            }
+        }
+
+        async function testGetUser() {
+            addResult('🔄 Get User', 'Checking current user...');
+
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error) {
+                    addResult('❌ Get User Failed', error.message);
+                } else if (user) {
+                    currentUser = user;
+                    addResult('✅ Get User Success', `User: ${user.email}`, {
+                        userId: user.id,
+                        email: user.email
+                    });
+                } else {
+                    addResult('⚠️ Get User', 'No user found');
+                }
+            } catch (error) {
+                addResult('❌ Get User Error', error.message);
+            }
+        }
+
+        async function testSignOut() {
+            addResult('🔄 Sign Out', 'Signing out...');
+
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    addResult('❌ Sign Out Failed', error.message);
+                } else {
+                    currentUser = null;
+                    addResult('✅ Sign Out Success', 'Successfully signed out');
+                }
+            } catch (error) {
+                addResult('❌ Sign Out Error', error.message);
+            }
+        }
+
+        // File Parsing Tests
+        async function testFileParsing() {
+            const file = document.getElementById('imageFile').files[0];
+            if (!file) {
+                addResult('❌ No File', 'Please select a file first');
+                return;
+            }
+
+            addResult('🔍 File Parsing Test', 'Analyzing file structure...');
+
+            try {
+                // Test file reading
+                const arrayBuffer = await file.arrayBuffer();
+                const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+                
+                addResult('✅ File Read Success', `File size: ${file.size} bytes, Base64 length: ${base64.length}`, {
+                    fileSize: file.size,
+                    base64Length: base64.length,
+                    fileType: file.type,
+                    fileName: file.name
+                });
+
+                // Update request body size
+                document.getElementById('requestBodySize').value = `${(file.size / 1024).toFixed(2)} KB`;
+
+            } catch (error) {
+                addResult('❌ File Read Failed', error.message);
+            }
+        }
+
+        // Edge Function Tests
+        async function testEdgeFunctionNoAuth() {
+            const file = document.getElementById('imageFile').files[0];
+            if (!file) {
+                addResult('❌ No File', 'Please select a file first');
+                return;
+            }
+
+            addResult('🔄 Edge Function (No Auth)', 'Testing without authentication...');
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const headers = {
+                    'Content-Type': 'multipart/form-data'
+                };
+
+                // Update request headers display
+                document.getElementById('requestHeaders').value = JSON.stringify(headers, null, 2);
+
+                const response = await fetch(document.getElementById('edgeFunctionUrl').value, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    addResult('✅ Edge Function (No Auth) Success', `HTTP ${response.status}`, {
+                        status: response.status,
+                        result: result
+                    });
+                } else {
+                    addResult('❌ Edge Function (No Auth) Failed', `HTTP ${response.status}: ${result.error || 'Unknown error'}`, {
+                        status: response.status,
+                        error: result.error,
+                        details: result.details
+                    });
+                }
+            } catch (error) {
+                addResult('❌ Edge Function (No Auth) Error', error.message);
+            }
+        }
+
+        async function testEdgeFunctionWithAuth() {
+            const file = document.getElementById('imageFile').files[0];
+            if (!file) {
+                addResult('❌ No File', 'Please select a file first');
+                return;
+            }
+
+            addResult('🔄 Edge Function (With Auth)', 'Testing with anon key...');
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const anonKey = document.getElementById('anonKey').value;
+                const headers = {
+                    'Authorization': `Bearer ${anonKey}`
+                };
+
+                // Update request headers display
+                document.getElementById('requestHeaders').value = JSON.stringify(headers, null, 2);
+
+                const response = await fetch(document.getElementById('edgeFunctionUrl').value, {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const detections = result.results?.detectedFoods || [];
+                    addResult('✅ Edge Function (With Auth) Success', `HTTP ${response.status}, Found ${detections.length} detections`, {
+                        status: response.status,
+                        detections: detections,
+                        processingTime: result.results?.processingTime,
+                        message: result.message
+                    });
+                } else {
+                    addResult('❌ Edge Function (With Auth) Failed', `HTTP ${response.status}: ${result.error || 'Unknown error'}`, {
+                        status: response.status,
+                        error: result.error,
+                        details: result.details
+                    });
+                }
+            } catch (error) {
+                addResult('❌ Edge Function (With Auth) Error', error.message);
+            }
+        }
+
+        async function testEdgeFunctionWithToken() {
+            if (!currentUser) {
+                addResult('❌ No User', 'Please sign in first');
+                return;
+            }
+
+            const file = document.getElementById('imageFile').files[0];
+            if (!file) {
+                addResult('❌ No File', 'Please select a file first');
+                return;
+            }
+
+            addResult('🔄 Edge Function (With Token)', 'Testing with user token...');
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const accessToken = session?.access_token;
+
+                if (!accessToken) {
+                    addResult('❌ No Token', 'No access token available');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const headers = {
+                    'Authorization': `Bearer ${accessToken}`
+                };
+
+                // Update request headers display
+                document.getElementById('requestHeaders').value = JSON.stringify(headers, null, 2);
+
+                const response = await fetch(document.getElementById('edgeFunctionUrl').value, {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const detections = result.results?.detectedFoods || [];
+                    addResult('✅ Edge Function (With Token) Success', `HTTP ${response.status}, Found ${detections.length} detections`, {
+                        status: response.status,
+                        detections: detections,
+                        processingTime: result.results?.processingTime,
+                        message: result.message,
+                        userId: currentUser.id
+                    });
+                } else {
+                    addResult('❌ Edge Function (With Token) Failed', `HTTP ${response.status}: ${result.error || 'Unknown error'}`, {
+                        status: response.status,
+                        error: result.error,
+                        details: result.details
+                    });
+                }
+            } catch (error) {
+                addResult('❌ Edge Function (With Token) Error', error.message);
+            }
+        }
+
+        // Utility functions
+        function addResult(title, message, details = null) {
+            const resultsList = document.getElementById('resultsList');
+            
+            if (resultsList.children.length === 1 && resultsList.children[0].textContent.includes('Select a file')) {
+                resultsList.innerHTML = '';
+            }
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'border rounded-lg p-4 bg-gray-50';
+            
+            let detailsHtml = '';
+            if (details) {
+                detailsHtml = `
+                    <details class="mt-2">
+                        <summary class="cursor-pointer text-blue-600 text-sm">View Details</summary>
+                        <pre class="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">${JSON.stringify(details, null, 2)}</pre>
+                    </details>
+                `;
+            }
+
+            resultDiv.innerHTML = `
+                <div class="font-medium">${title}</div>
+                <div class="text-sm text-gray-600">${message}</div>
+                ${detailsHtml}
+                <div class="text-xs text-gray-500 mt-2">${new Date().toLocaleTimeString()}</div>
+            `;
+
+            resultsList.insertBefore(resultDiv, resultsList.firstChild);
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            initializeSupabase();
+        });
+    </script>
+</body>
+</html> 

@@ -8,6 +8,7 @@ import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/DataContext";
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +17,7 @@ export const LoginForm = () => {
   const [signupData, setSignupData] = useState({ email: "", password: "", confirmPassword: "" });
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { refreshSession } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,12 +37,11 @@ export const LoginForm = () => {
       // JWT token is automatically handled by Supabase client
       console.log("User logged in:", data.user);
       console.log("Session:", data.session);
-      
       toast({
         title: "Welcome back! 👋",
         description: "Successfully logged in to FitTrack AI",
       });
-      
+      await refreshSession(); // Ensure user context is up to date
       navigate('/dashboard');
     } catch (error: any) {
       console.error("Login error:", error);
