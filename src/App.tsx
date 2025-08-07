@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Link } from 'react-router-dom';
 import { useState } from 'react';
 import Dashboard from './pages/Dashboard';
 import FoodDetection from './pages/FoodDetection';
@@ -51,9 +51,9 @@ function Navigation() {
           {navigationItems.map((item) => {
             const isActive = getActivePage() === item.id;
             return (
-              <a
+              <Link
                 key={item.id}
-                href={item.path}
+                to={item.path}
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
                     ? 'bg-green-500 text-white'
@@ -62,7 +62,7 @@ function Navigation() {
               >
                 <span className="text-lg">{item.icon}</span>
                 <span className="font-medium">{item.name}</span>
-              </a>
+              </Link>
             );
           })}
         </nav>

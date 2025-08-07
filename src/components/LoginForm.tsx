@@ -42,7 +42,7 @@ export const LoginForm = () => {
         description: "Successfully logged in to FitTrack AI",
       });
       await refreshSession(); // Ensure user context is up to date
-      navigate('/dashboard');
+      navigate('/');
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
@@ -102,7 +102,7 @@ export const LoginForm = () => {
       });
       
       if (data.session) {
-        navigate('/dashboard');
+        navigate('/');
       }
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -121,7 +121,7 @@ export const LoginForm = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}`,
         }
       });
 
