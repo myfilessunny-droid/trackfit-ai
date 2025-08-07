@@ -1,7 +1,17 @@
 [build]
-command = "npm run build"
+command = """
+python3 -m pip install --upgrade pip &&
+pip install -r requirements.txt &&
+npm install &&
+npm run build
+"""
 publish = "dist"
 
 [build.environment]
-PYTHON_VERSION = "3.10"
 NODE_VERSION = "20"
+PYTHON_VERSION = "3.10"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
